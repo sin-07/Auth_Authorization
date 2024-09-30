@@ -52,22 +52,44 @@ exports.login = async (req, res) => {
     }
     // console.log(process.env.JWT_SECRET);
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "15s",
+      expiresIn: "30s",
     });
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: true,
+      expiresIn: new Date(Date.now() + 1000 * 30),
+      sameSite: "lax",
+      path: "/",
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "User logged in successfully",
-      user,
-      token,
     });
   } catch (error) {
     return res.status(500).json({
       message: error.message,
     });
   }
+};
+
+exports.logout = async (req, res) => {
+  const cookies = req.headers.cookie;
+  const prevToken = cookies.split("=")[1];
+  if (!prevToken) {
+    return res.status(404).json({
+      message: "Access denied: No token found",
+    });
+  }
+  jwt.verify(String(prevToken), process.env.JWT_SECRET, (err, user) => {
+    if (err) {
+      return res.status(400).json({
+        message: "Invalid token",
+      });
+    }
+    res.clearCookie("token");
+
+    return res.status(200).json({
+      message: "User logged out successfully",
+    });
+  });
 };

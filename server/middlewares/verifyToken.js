@@ -1,21 +1,26 @@
 const jwt = require("jsonwebtoken");
 
 const verifyToken = (req, res, next) => {
-  const headers = req.headers["authorization"];
+  const cookies = req.headers.cookie; 
+  const token = cookies.split("=")[1]; 
 
-  const token = headers.split(" ")[1];
+
+
   if (!token) {
     return res.status(404).json({
-      message: "Access denied",
+      message: "Access denied: No token found",
     });
   }
+
+
   jwt.verify(String(token), process.env.JWT_SECRET, (err, user) => {
     if (err) {
       return res.status(400).json({ message: "Invalid token" });
     }
-    req.id = user.id;
+    console.log(user)
+    req.id = user.id; 
   });
-  next();
+  next(); 
 };
 
 module.exports = verifyToken;
